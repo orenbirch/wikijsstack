@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # MariaDB Database
+  mariadb:
+    image: mariadb:11
+    container_name: wikijs-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changeme_root_password}
+      MYSQL_DATABASE: ${DB_NAME:-wikijs}
+      MYSQL_USER: ${DB_USER:-wikijs}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-changeme_db_password}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - wikijs-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "true"
+
+  # Wiki.js Application
+  wikijs:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wikijs-app
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      DB_TYPE: mariadb
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-wikijs}
+      DB_USER: ${DB_USER:-wikijs}
+      DB_PASS: ${DB_PASSWORD:-changeme_db_password}
+    ports:
+      - "${WIKIJS_PORT:-3000}:3000"
+    volumes:
+      - wikijs-data:/wiki/data
+      - wikijs-content:/wiki/repo
+    networks:
+      - wikijs-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "true"
+
+  # Filebrowser - Volume File Manager
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: wikijs-filebrowser
+    restart: unless-stopped
+    environment:
+      - FB_NOAUTH=${FB_NOAUTH:-false}
+    ports:
+      - "${FILEBROWSER_PORT:-8080}:80"
+    volumes:
+      - mariadb-data:/srv/mariadb-data:ro
+      - wikijs-data:/srv/wikijs-data
+      - wikijs-content:/srv/wikijs-content
+      - ./backups:/srv/backups
+      - filebrowser-config:/config
+      - filebrowser-database:/database
+    networks:
+      - wikijs-network
+    command: 
+      - --database=/database/filebrowser.db
+      - --config=/config/settings.json
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "true"
+
+networks:
+  wikijs-network:
+    driver: bridge
+
+volumes:
+  # MariaDB persistent storage
+  mariadb-data:
+    driver: local
+  
+  # Wiki.js data storage
+  wikijs-data:
+    driver: local
+  
+  # Wiki.js content/repository storage
+  wikijs-content:
+    driver: local
+  
+  # Filebrowser configuration
+  filebrowser-config:
+    driver: local
+  
+  # Filebrowser database
+  filebrowser-database:
+    driver: local
