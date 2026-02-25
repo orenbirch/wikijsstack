@@ -68,6 +68,8 @@ services:
     restart: unless-stopped
     environment:
       - FB_NOAUTH=${FB_NOAUTH:-false}
+      - FB_ADMIN_USER=${FB_ADMIN_USER:-admin}
+      - FB_ADMIN_PASSWORD=${FB_ADMIN_PASSWORD:-changeme_filebrowser_admin_password}
     ports:
       - "${FILEBROWSER_PORT:-8080}:80"
     volumes:
@@ -79,9 +81,13 @@ services:
       - filebrowser-database:/database
     networks:
       - wikijs-network
-    command: 
-      - --database=/database/filebrowser.db
-      - --config=/config/settings.json
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      if [ ! -f /database/filebrowser.db ]; then
+        filebrowser config init --database /database/filebrowser.db;
+        filebrowser users add "$FB_ADMIN_USER" "$FB_ADMIN_PASSWORD" --perm.admin --database /database/filebrowser.db;
+      fi;
+      exec filebrowser --database=/database/filebrowser.db --config=/config/settings.json
     logging:
       driver: "json-file"
       options:

@@ -40,10 +40,10 @@ A complete Docker Compose stack for running Wiki.js with MariaDB database and Fi
 
 ### Filebrowser Setup
 1. Navigate to http://localhost:8080
-2. Default credentials:
-   - Username: `admin`
-   - Password: `admin`
-3. **Change the password immediately** after first login
+2. Login credentials (from your `.env` file):
+   - Username: `FB_ADMIN_USER`
+   - Password: `FB_ADMIN_PASSWORD`
+3. **Change the password immediately** after first login if using a temporary value
 4. Configure users and permissions as needed
 
 ## File Management
