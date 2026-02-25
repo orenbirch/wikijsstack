@@ -79,13 +79,15 @@ services:
       - filebrowser-database:/database
     networks:
       - wikijs-network
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      if [ ! -f /database/filebrowser.db ]; then
-        filebrowser config init --database /database/filebrowser.db;
-        filebrowser users add "$FB_ADMIN_USER" "$FB_ADMIN_PASSWORD" --perm.admin --database /database/filebrowser.db;
-      fi;
-      exec filebrowser --database=/database/filebrowser.db --config=/config/settings.json
+    entrypoint: /bin/sh
+    command:
+      - -ec
+      - |
+        if [ ! -f /database/filebrowser.db ]; then
+          filebrowser config init --database /database/filebrowser.db
+          filebrowser users add "$FB_ADMIN_USER" "$FB_ADMIN_PASSWORD" --perm.admin --database /database/filebrowser.db
+        fi
+        exec filebrowser --database=/database/filebrowser.db --config=/config/settings.json
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
       interval: 30s
