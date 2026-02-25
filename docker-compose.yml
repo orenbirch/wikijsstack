@@ -1,18 +1,18 @@
-version: '3.8'
-
 services:
   # MariaDB Database
   mariadb:
-    image: mariadb:11
+    image: ${MARIADB_IMAGE:-mariadb:11}
     container_name: wikijs-mariadb
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changeme_root_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
       MYSQL_DATABASE: ${DB_NAME:-wikijs}
       MYSQL_USER: ${DB_USER:-wikijs}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-changeme_db_password}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - mariadb-data:/var/lib/mysql
+    security_opt:
+      - no-new-privileges:true
     networks:
       - wikijs-network
     healthcheck:
@@ -29,7 +29,7 @@ services:
 
   # Wiki.js Application
   wikijs:
-    image: ghcr.io/requarks/wiki:2
+    image: ${WIKIJS_IMAGE:-ghcr.io/requarks/wiki:2}
     container_name: wikijs-app
     restart: unless-stopped
     depends_on:
@@ -41,12 +41,19 @@ services:
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-wikijs}
       DB_USER: ${DB_USER:-wikijs}
-      DB_PASS: ${DB_PASSWORD:-changeme_db_password}
+      DB_PASS: ${DB_PASSWORD:?DB_PASSWORD is required}
     ports:
       - "${WIKIJS_PORT:-3000}:3000"
     volumes:
       - wikijs-data:/wiki/data
       - wikijs-content:/wiki/repo
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - wikijs-network
     healthcheck:
@@ -63,13 +70,13 @@ services:
 
   # Filebrowser - Volume File Manager
   filebrowser:
-    image: filebrowser/filebrowser:latest
+    image: ${FILEBROWSER_IMAGE:-filebrowser/filebrowser:v2}
     container_name: wikijs-filebrowser
     restart: unless-stopped
     environment:
       - FB_NOAUTH=${FB_NOAUTH:-false}
       - FB_ADMIN_USER=${FB_ADMIN_USER:-admin}
-      - FB_ADMIN_PASSWORD=${FB_ADMIN_PASSWORD:-changeme_filebrowser_admin_password}
+      - FB_ADMIN_PASSWORD=${FB_ADMIN_PASSWORD:?FB_ADMIN_PASSWORD is required}
     ports:
       - "${FILEBROWSER_PORT:-8080}:80"
     volumes:
@@ -79,6 +86,13 @@ services:
       - ./backups:/srv/backups
       - filebrowser-config:/config
       - filebrowser-database:/database
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - wikijs-network
     entrypoint: ["/bin/sh", "-c"]
@@ -88,6 +102,11 @@ services:
         filebrowser users add "$FB_ADMIN_USER" "$FB_ADMIN_PASSWORD" --perm.admin --database /database/filebrowser.db;
       fi;
       exec filebrowser --database=/database/filebrowser.db --config=/config/settings.json
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     logging:
       driver: "json-file"
       options:

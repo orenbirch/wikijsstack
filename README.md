@@ -16,11 +16,11 @@ A complete Docker Compose stack for running Wiki.js with MariaDB database and Fi
    cp .env.example .env
    ```
 
-2. **Edit the `.env` file and change default passwords:**
+2. **Edit the `.env` file and set required values:**
    ```bash
    nano .env
    ```
-   ⚠️ **Important**: Change all default passwords before deploying!
+   ⚠️ **Important**: Set strong values for `DB_ROOT_PASSWORD`, `DB_PASSWORD`, and `FB_ADMIN_PASSWORD` before deploying.
 
 3. **Start the stack:**
    ```bash
@@ -166,13 +166,14 @@ All data is stored in Docker volumes:
 
 ## Security Recommendations
 
-1. **Change all default passwords** in the `.env` file
+1. **Set strong values for all required passwords** in the `.env` file
 2. **Change Filebrowser admin password** after first login
 3. Use strong, unique passwords for all services
 4. Enable authentication in Filebrowser (`FB_NOAUTH=false`)
 5. Use a reverse proxy (nginx, Traefik) with SSL in production
 6. Regularly backup your data
-7. Keep images updated
+7. Pin image tags (or digests) in `.env` and keep them updated
+8. Keep container hardening enabled (`no-new-privileges`, reduced Linux capabilities, read-only rootfs for app containers)
 
 ## Ports
 
