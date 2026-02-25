@@ -176,10 +176,13 @@ All data is stored in Docker volumes:
 
 ## Ports
 
+- `13306` - MariaDB host port (maps to container `3306`)
 - `3000` - Wiki.js web interface
 - `8080` - Filebrowser web interface
 
 You can change these ports in the `.env` file.
+
+For running multiple stacks on the same host, use different values for `MARIADB_PORT`, `WIKIJS_PORT`, and `FILEBROWSER_PORT` per stack.
 
 ## Troubleshooting
 
