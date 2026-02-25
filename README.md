@@ -173,7 +173,6 @@ All data is stored in Docker volumes:
 5. Use a reverse proxy (nginx, Traefik) with SSL in production
 6. Regularly backup your data
 7. Pin image tags (or digests) in `.env` and keep them updated
-8. Keep container hardening enabled (`no-new-privileges`, reduced Linux capabilities, read-only rootfs for app containers)
 
 ## Ports
 

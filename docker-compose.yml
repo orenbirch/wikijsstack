@@ -11,8 +11,6 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - mariadb-data:/var/lib/mysql
-    security_opt:
-      - no-new-privileges:true
     networks:
       - wikijs-network
     healthcheck:
@@ -47,13 +45,6 @@ services:
     volumes:
       - wikijs-data:/wiki/data
       - wikijs-content:/wiki/repo
-    read_only: true
-    tmpfs:
-      - /tmp
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
     networks:
       - wikijs-network
     healthcheck:
@@ -86,13 +77,6 @@ services:
       - ./backups:/srv/backups
       - filebrowser-config:/config
       - filebrowser-database:/database
-    read_only: true
-    tmpfs:
-      - /tmp
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
     networks:
       - wikijs-network
     entrypoint: ["/bin/sh", "-c"]
